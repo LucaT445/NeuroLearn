@@ -1,24 +1,21 @@
 import trimesh
-import numpy as np
 import plotly.graph_objects as go
 
-stl_path = r"C:\Users\lucat\Downloads\brain.stl"
+ply_path = r"C:\Users\lucat\Downloads\brain_backup.ply"
 
-mesh = trimesh.load_mesh(stl_path)
+mesh = trimesh.load_mesh(ply_path)
 
-# Gets vertices and face data from the brain mesh
+# Gets vertices, faces, and vertex colors from the brain mesh
 vertices = mesh.vertices
 faces = mesh.faces
 
-colors = np.zeros((len(vertices), 3))  
+vertex_colors = mesh.visual.vertex_colors[:, :3] / 255.0  # Normalize to 0-1 range for Plotly
 
-
-# Creates the 3D mesh visualization
 fig = go.Figure(data=[go.Mesh3d(
     x=vertices[:, 0], y=vertices[:, 1], z=vertices[:, 2],
     i=faces[:, 0], j=faces[:, 1], k=faces[:, 2],
-    vertexcolor=colors,  
-    opacity=0.25  # Low opacity is used to view the internal regions of the brain
+    vertexcolor=vertex_colors, 
+    opacity=0.9  # Adjust opacity as needed
 )])
 
 fig.update_layout(
@@ -28,15 +25,13 @@ fig.update_layout(
         yaxis_title="Y-axis",
         zaxis_title="Z-axis",
         camera=dict(
-            eye=dict(x=0, y=0, z=2),  # Position camera above brain for top view
-            up=dict(x=0, y=1, z=0)     
+            eye=dict(x=1.5, y=1.5, z=1.5), 
+            up=dict(x=0, y=1, z=0)
         ),
-        aspectmode='data',  
+        aspectmode='data',
         bgcolor="forestgreen"
     ),
     paper_bgcolor="forestgreen"
-
 )
-
 
 fig.show()
