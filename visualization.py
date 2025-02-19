@@ -1,7 +1,7 @@
 import trimesh
 import plotly.graph_objects as go
 
-ply_path = r"C:\Users\lucat\Downloads\brain_backup.ply"
+ply_path = r"C:\Users\lucat\Downloads\brain_backup2.ply"
 
 mesh = trimesh.load_mesh(ply_path)
 
