@@ -71,18 +71,40 @@ def build_brain_figure():
             color=color,
             opacity=1.0,
             name=region_name,
-            hovertext=[region_name] * len(verts),   # one per vertex
+            hovertext=[region_name] * len(verts),   # to ensure the name is displayed no matter where in the region the arrow is
             hoverinfo='text',
         ))
 
-    fig.update_layout(
-        title="NeuroLearn",
-        scene=dict(
-            xaxis_title="X", yaxis_title="Y", zaxis_title="Z",
-            aspectmode="data"
+    fig.update_layout( # eliminates gridlines so that the brain is displayed on a blank canvas
+    title="NeuroLearn",
+    scene=dict(
+        xaxis=dict(
+            title="",
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            showbackground=False   
         ),
-        showlegend=False
-    )
+        yaxis=dict(
+            title="",
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            showbackground=False   
+        ),
+        zaxis=dict(
+            title="",
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            showbackground=False   
+        ),
+        aspectmode="data",
+        bgcolor="rgba(0,0,0,0)"            
+    ),
+    paper_bgcolor="rgba(0,0,0,0)",
+    margin=dict(l=0, r=0, b=0, t=50)
+)
 
     return fig, description_dict
 
