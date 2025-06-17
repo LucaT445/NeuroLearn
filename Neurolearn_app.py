@@ -95,7 +95,35 @@ app.layout = html.Div([
 def update_description(clickData):
     if clickData and clickData.get('points'):
         region_name = clickData['points'][0]['hovertext']
-        return description_dict.get(region_name, "No description available.")
+        region_data = description_dict.get(region_name)
+
+        if isinstance(region_data, dict):
+            disorders_list = region_data.get("disorders", [])
+            formatted_disorders = []
+            if isinstance(disorders_list, list):
+                for item in disorders_list:
+                    name = item.get("name", "Unknown")
+                    desc = item.get("description", "")
+                    formatted_disorders.append(
+            html.Li([
+                html.Strong(f"{name}: "),
+                desc
+            ])
+        )
+
+            return html.Div([
+                html.H2(region_data.get("name", "Region"), style={"marginBottom": "10px"}),
+                html.P(f"🧠 Function: {region_data.get('function', 'N/A')}"),
+                html.P(f"📍 Location: {region_data.get('location', 'N/A')}"),
+                html.P(f"🔍 Examples: {region_data.get('examples', 'N/A')}"),
+                html.Div([
+                    html.Span("⚠️ Disorders:"),
+                    html.Ul(formatted_disorders)
+                ]) if formatted_disorders else html.P("⚠️ Disorders: None listed.")
+            ])
+        else:
+            return region_data or "No description available."
+
     return "Click a brain region to learn more."
 
 if __name__ == '__main__':
