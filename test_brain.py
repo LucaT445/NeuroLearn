@@ -18,6 +18,18 @@ def build_brain_figure():
         "Material2_8": "Corpus Callosum"
     }
 
+    region_color_dict = {
+    "Frontal Lobe": "red",
+    "Parietal Lobe": "yellow",
+    "Temporal Lobe": "green",
+    "Occipital Lobe": "blue",
+    "Cerebellum": "purple",
+    "Pituitary Gland": "brown",
+    "Brainstem": "orange",
+    "Corpus Callosum": "black"
+}
+    default_color = "lightgrey"
+
     description_dict = {
     "Frontal Lobe": {
         "name": "Frontal Lobe",
@@ -149,7 +161,7 @@ def build_brain_figure():
                 "description": "Caused when the corpus callosum is severed, often during epilepsy treatment, leading to disrupted communication between hemispheres."
             },
             {
-                "name": "Agenesis of the Corpus Callosum",
+                "name": "Agenesis of the Corpus Callosum (ACC)",
                 "description": "A condition in which the corpus callosum fails to develop properly, often resulting in cognitive and motor delays."
             }
         ]
@@ -168,24 +180,8 @@ def build_brain_figure():
         verts = geom.vertices
         faces = geom.faces
 
-        if region_name == "Frontal Lobe":
-            color = "red"
-        elif region_name == "Temporal Lobe":
-            color = "darkgreen"
-        elif region_name == "Parietal Lobe":
-            color = "yellow"
-        elif region_name == "Occipital Lobe":
-            color = "blue"
-        elif region_name == "Pituitary Gland":
-            color = "brown"
-        elif region_name == "Brainstem":
-            color = "orange"
-        elif region_name == "Cerebellum":
-            color = "purple"
-        elif region_name == "Corpus Callosum":
-            color = "black"
-        else:
-            color = "lightgrey"
+        color = region_color_dict.get(region_name, default_color)
+
 
         fig.add_trace(go.Mesh3d(
             x=verts[:, 0], y=verts[:, 1], z=verts[:, 2],

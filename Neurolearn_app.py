@@ -1,11 +1,42 @@
 import dash
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, callback, State, ctx
+import json
+import os
+import openai
+from openai import OpenAI
 from test_brain import build_brain_figure
 
 # Gets figure and descriptions from test_brain.py
 fig, description_dict = build_brain_figure()
 
+region_data_json = json.dumps(description_dict)
+
+base_system_prompt = """\
+You are NeuroLearn, an interactive 3D brain‑learning assistant.
+You know exactly the eight regions on the 3D model (names, functions,
+locations, example disorders) as provided in the JSON below. This model is
+mainly on the parts of the cerebral cortex. Summarize these and then 
+add any additional insights you know about this region. 
+If the user asks for details beyond what’s in the JSON, 
+feel free to supplement with your own neuroscientific knowledge.
+If the user asks about anything outside those eight regions (e.g. “what
+are neurotransmitters?”), describe it to them."""
+
+region_color_dict = {
+    "Frontal Lobe": "red",
+    "Parietal Lobe": "#ebc310",
+    "Temporal Lobe": "green",
+    "Occipital Lobe": "blue",
+    "Cerebellum": "purple",
+    "Pituitary Gland": "brown",
+    "Brainstem": "orange",
+    "Corpus Callosum": "black"
+}
+default_color = "lightgrey"
+
 app = dash.Dash(__name__)
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app.layout = html.Div([
 
@@ -55,12 +86,47 @@ app.layout = html.Div([
             figure=fig,
             style={
                 'height': '600px',
-                'backgroundColor': 'rgba(255,255,255,0)'  
+                'backgroundColor': 'rgba(255,255,255,0)'
             },
             config={
                 'displayModeBar': False
             }
         ),
+
+        html.Div([
+            html.Label('Ask NeuroLearn...', htmlFor='user-input-box', style={
+                'marginRight': '10px',
+                'fontFamily': 'Inter, sans-serif'
+            }),
+            html.Button('Submit', id='submit-button'),
+            dcc.Input(
+                id='user-input-box',
+                type='text',
+                placeholder="What is your question?",
+                style={
+                    'fontFamily': 'Inter, sans-serif',
+                    'fontSize': '16px',
+                    'padding': '8px',
+                    'borderRadius': '8px'
+                }
+            ),
+            html.Div(id='answer-box', style={
+                'fontFamily': 'Inter, sans-serif',
+                'fontSize': '16px',
+                'lineHeight': '1.6',
+                'padding': '20px',
+                'border': '1px solid rgba(0,0,0,0.1)',
+                'borderRadius': '10px',
+                'margin': '20px auto',
+                'maxWidth': '800px',
+                'backgroundColor': 'rgba(255,255,255,0.8)',
+                'color': '#333'
+            })
+        ], style={
+            'padding': '20px',
+            'maxWidth': '800px',
+            'margin': '0 auto'
+        }),
 
         html.Div(id='description-box', style={
             'fontFamily': 'Inter, sans-serif',
@@ -71,7 +137,7 @@ app.layout = html.Div([
             'borderRadius': '10px',
             'margin': '40px auto',
             'maxWidth': '800px',
-            'backgroundColor': 'rgba(255,255,255,0.8)',  
+            'backgroundColor': 'rgba(255,255,255,0.8)',
             'color': '#333'
         })
 
@@ -81,7 +147,7 @@ app.layout = html.Div([
         'margin': '0 auto',
         'position': 'relative',
         'zIndex': '10',
-        'backgroundColor': 'rgba(255,255,255,0.2)',  
+        'backgroundColor': 'rgba(255,255,255,0.2)',
         'borderRadius': '12px',
         'boxShadow': '0 4px 12px rgba(0, 0, 0, 0.15)'
     })
@@ -90,42 +156,80 @@ app.layout = html.Div([
 
 @app.callback(
     Output('description-box', 'children'),
-    Input('brain-graph', 'clickData')
+    Output('answer-box', 'children'),
+    Input('brain-graph', 'clickData'),
+    Input('submit-button', 'n_clicks'),
+    State('user-input-box', 'value'),
 )
-def update_description(clickData):
-    if clickData and clickData.get('points'):
+def update_description(clickData, n_clicks, user_question):
+    button_trigger = ctx.triggered_id
+
+    if button_trigger == 'submit-button' and n_clicks and user_question:
+        system_header = base_system_prompt + "\nHere is the JSON of all regions:\n"
+        final_system_prompt = {
+            "role": "system",
+            "content": system_header + region_data_json
+        }
+
+        
+        messages = [
+        final_system_prompt,
+        {"role": "user", "content": user_question}
+    ]
+        try:
+            completion = client.chat.completions.create(
+                model = "gpt-3.5-turbo",
+                messages = messages,
+                max_tokens = 300,
+                temperature = 0.7
+            )
+            answer = completion.choices[0].message.content.strip()
+        except Exception as e:
+            answer = f"Error: {e}"
+
+        response_to_user = html.Div([
+            html.P(f"You asked: {user_question}"),
+            html.P(answer)
+        ])
+        return dash.no_update, response_to_user
+            
+            
+
+    elif button_trigger == 'brain-graph' and clickData and clickData.get('points'):
         region_name = clickData['points'][0]['hovertext']
         region_data = description_dict.get(region_name)
 
         if isinstance(region_data, dict):
-            disorders_list = region_data.get("disorders", [])
-            formatted_disorders = []
-            if isinstance(disorders_list, list):
-                for item in disorders_list:
-                    name = item.get("name", "Unknown")
-                    desc = item.get("description", "")
-                    formatted_disorders.append(
-            html.Li([
-                html.Strong(f"{name}: "),
-                desc
-            ])
-        )
+            formatted_disorders = [
+                html.Li([
+                    html.Strong(f"{item['name']}: "),
+                    item['description']
+                ]) for item in region_data.get("disorders", [])
+            ]
+            color = region_color_dict.get(region_name, default_color)
+            title_style = {"marginBottom": "10px", "color": color}
 
-            return html.Div([
-                html.H2(region_data.get("name", "Region"), style={"marginBottom": "10px"}),
-                html.P(f"🧠 Function: {region_data.get('function', 'N/A')}"),
-                html.P(f"📍 Location: {region_data.get('location', 'N/A')}"),
-                html.P(f"🔍 Examples: {region_data.get('examples', 'N/A')}"),
+
+            region_info = html.Div([
+                html.H2(region_data["name"], style=title_style),
+                html.P(f"Function: {region_data['function']}"),
+                html.P(f"Location: {region_data['location']}"),
+                html.P(f"Examples: {region_data['examples']}"),
                 html.Div([
-                    html.Span("⚠️ Disorders:"),
+                    html.Span("Disorders:"),
                     html.Ul(formatted_disorders)
-                ]) if formatted_disorders else html.P("⚠️ Disorders: None listed.")
+                ])
             ])
-        else:
-            return region_data or "No description available."
+            return region_info, dash.no_update
 
-    return "Click a brain region to learn more."
+        return region_data or "No description available.", dash.no_update
+
+    else:
+        return "Click a brain region to learn more.", dash.no_update
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
 
