@@ -1,24 +1,21 @@
-def build_brain_figure():
-    import trimesh
-    import plotly.graph_objects as go
+import trimesh
+import plotly.graph_objects as go
 
-    # Load GLB
-    glb_path = r"C:\Users\lucat\Downloads\brain.glb"
-    scene = trimesh.load(glb_path, process=False)
+glb_path = r"C:\Users\lucat\Downloads\brain.glb"
+scene = trimesh.load(glb_path, process=False)
 
-    # Mappings
-    mesh_region_dict = {
-        "Material2_6": "Frontal Lobe",
-        "Material2_2": "Parietal Lobe",
-        "Material2_1": "Temporal Lobe",
-        "Material2_5": "Occipital Lobe",
-        "Material2": "Pituitary Gland",
-        "Material2_4": "Brainstem",
-        "Material2_9": "Cerebellum",
-        "Material2_8": "Corpus Callosum"
-    }
+mesh_region_dict = {
+    "Material2_6": "Frontal Lobe",
+    "Material2_2": "Parietal Lobe",
+    "Material2_1": "Temporal Lobe",
+    "Material2_5": "Occipital Lobe",
+    "Material2": "Pituitary Gland",
+    "Material2_4": "Brainstem",
+    "Material2_9": "Cerebellum",
+    "Material2_8": "Corpus Callosum"
+}
 
-    region_color_dict = {
+region_color_dict = {
     "Frontal Lobe": "red",
     "Parietal Lobe": "yellow",
     "Temporal Lobe": "green",
@@ -28,9 +25,10 @@ def build_brain_figure():
     "Brainstem": "orange",
     "Corpus Callosum": "black"
 }
-    default_color = "lightgrey"
 
-    description_dict = {
+default_color = "lightgrey"
+
+description_dict = {
     "Frontal Lobe": {
         "name": "Frontal Lobe",
         "function": "Responsible for the executive functions, movement, personality, decision making, and behavior regulation.",
@@ -168,7 +166,7 @@ def build_brain_figure():
     }
 }
 
-
+def build_brain_figure():
     fig = go.Figure()
 
     for name, geom in scene.geometry.items():
@@ -176,12 +174,9 @@ def build_brain_figure():
             continue
 
         region_name = mesh_region_dict.get(name, "Unknown Region")
-
         verts = geom.vertices
         faces = geom.faces
-
         color = region_color_dict.get(region_name, default_color)
-
 
         fig.add_trace(go.Mesh3d(
             x=verts[:, 0], y=verts[:, 1], z=verts[:, 2],
@@ -189,42 +184,34 @@ def build_brain_figure():
             color=color,
             opacity=1.0,
             name=region_name,
-            hovertext=[region_name] * len(verts),   # to ensure the name is displayed no matter where in the region the arrow is
+            hovertext=[region_name] * len(verts),
             hoverinfo='text',
         ))
 
-    fig.update_layout( # eliminates gridlines so that the brain is displayed on a blank canvas
-    title="NeuroLearn",
-    scene=dict(
-        xaxis=dict(
-            title="",
-            showgrid=False,
-            zeroline=False,
-            showticklabels=False,
-            showbackground=False   
+    fig.update_layout(
+        title="NeuroLearn",
+        scene=dict(
+            xaxis=dict(
+                title="", showgrid=False, zeroline=False,
+                showticklabels=False, showbackground=False
+            ),
+            yaxis=dict(
+                title="", showgrid=False, zeroline=False,
+                showticklabels=False, showbackground=False
+            ),
+            zaxis=dict(
+                title="", showgrid=False, zeroline=False,
+                showticklabels=False, showbackground=False
+            ),
+            aspectmode="data",
+            bgcolor="rgba(0,0,0,0)"
         ),
-        yaxis=dict(
-            title="",
-            showgrid=False,
-            zeroline=False,
-            showticklabels=False,
-            showbackground=False   
-        ),
-        zaxis=dict(
-            title="",
-            showgrid=False,
-            zeroline=False,
-            showticklabels=False,
-            showbackground=False   
-        ),
-        aspectmode="data",
-        bgcolor="rgba(0,0,0,0)"            
-    ),
-    paper_bgcolor="rgba(0,0,0,0)",
-    margin=dict(l=0, r=0, b=0, t=50)
-)
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, b=0, t=50)
+    )
 
     return fig, description_dict
+
 
 
 
