@@ -9,7 +9,7 @@ from test_brain import build_brain_figure
 # Gets figure and descriptions from test_brain.py
 fig, description_dict = build_brain_figure()
 
-region_data_json = json.dumps(description_dict)
+region_data_json = json.dumps(description_dict) # Converts the dictionary to JSON string
 
 base_system_prompt = """\
 You are NeuroLearn, an interactive assistant that helps users learn about the human brain using a 3D model.
@@ -49,7 +49,7 @@ app.layout = html.Div([
         src="/assets/neuron_background.mp4",
         autoPlay=True,
         loop=True,
-        muted=True,
+        muted=True, # required for autoplay to work
         style={
             'position': 'fixed',
             'top': '0',
