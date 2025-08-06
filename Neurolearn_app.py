@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import dash
 from dash import dcc, html, Input, Output, callback, State, ctx
 import json
