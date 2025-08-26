@@ -39,6 +39,9 @@ It features a color-coded 3D model of the human brain showing each region's func
 
 ### Demo
 
+![NeuroLearn Demo](assets/NeuroLearn_Demo.gif)  
+*Interactive 3D brain model — rotate, zoom, and click regions to view details.*
+
 ---
 
 ### Requirements & Dependencies

@@ -2,9 +2,9 @@ import trimesh
 import plotly.graph_objects as go
 
 glb_path = r"C:\Users\lucat\Downloads\brain.glb"
-scene = trimesh.load(glb_path, process=False)
+scene = trimesh.load(glb_path, process=False)  # loads the brain file and preserves the brain exactly as is
 
-mesh_region_dict = {
+mesh_region_dict = {  # essentially a lookup table for material names
     "Material2_6": "Frontal Lobe",
     "Material2_2": "Parietal Lobe",
     "Material2_1": "Temporal Lobe",
@@ -28,7 +28,7 @@ region_color_dict = {
 
 default_color = "lightgrey"
 
-description_dict = {
+description_dict = { # maps each brain region name to its function, location, examples, and related disorders.
     "Frontal Lobe": {
         "name": "Frontal Lobe",
         "function": "Responsible for the executive functions, movement, personality, decision making, and behavior regulation.",
@@ -167,31 +167,32 @@ description_dict = {
 }
 
 def build_brain_figure():
-    fig = go.Figure()
+    fig = go.Figure() # creates an empty plotly figure for the brain
 
-    for name, geom in scene.geometry.items():
+    for name, geom in scene.geometry.items(): 
+        # skips non-meshes
         if not isinstance(geom, trimesh.Trimesh):
             continue
 
-        region_name = mesh_region_dict.get(name, "Unknown Region")
-        verts = geom.vertices
-        faces = geom.faces
+        region_name = mesh_region_dict.get(name, "Unknown Region") # prevents a crash if "name" isn't in the dictionary
+        verts = geom.vertices # array of 3D vertex coordinates 
+        faces = geom.faces # array of faces
         color = region_color_dict.get(region_name, default_color)
 
-        fig.add_trace(go.Mesh3d(
+        fig.add_trace(go.Mesh3d( # creates a 3D trace of the brain and adds it to to the empty plotly figure
             x=verts[:, 0], y=verts[:, 1], z=verts[:, 2],
             i=faces[:, 0], j=faces[:, 1], k=faces[:, 2],
             color=color,
             opacity=1.0,
             name=region_name,
-            hovertext=[region_name] * len(verts),
-            hoverinfo='text',
+            hovertext=[region_name] * len(verts), # shows region name on hover for each vertex
+            hoverinfo='text', # only shows the hovertext
         ))
 
-    fig.update_layout(
+    fig.update_layout( # adds a title and removes the axis visuals to give a cleaner look 
         title="NeuroLearn",
         scene=dict(
-            xaxis=dict(
+            xaxis=dict(  
                 title="", showgrid=False, zeroline=False,
                 showticklabels=False, showbackground=False
             ),
@@ -203,11 +204,11 @@ def build_brain_figure():
                 title="", showgrid=False, zeroline=False,
                 showticklabels=False, showbackground=False
             ),
-            aspectmode="data",
-            bgcolor="rgba(0,0,0,0)"
+            aspectmode="data", # prevents distortion of the brain
+            bgcolor="rgba(0,0,0,0)" # makes background transparent so that the neuron gif can be viewed
         ),
-        paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=0, r=0, b=0, t=50)
+        paper_bgcolor="rgba(0,0,0,0)", # removes the white box that would surround the brain
+        margin=dict(l=0, r=0, b=0, t=50) # removes side and bottom margins and keeps top space for the title
     )
 
     return fig, description_dict
