@@ -57,7 +57,7 @@ It features a color-coded 3D model of the human brain showing each region's func
     - `python-dotenv` — loads the environment variables from `.env`
 - Install all dependencies with:
 ```bash
-pip install -r dependencies.txt
+pip install -r requirements.txt
 ```
 - **Configuration**: Set `OPENAI_API_KEY` in an `.env` file before running the app (see [Configuration](#configuration))
 
@@ -83,7 +83,7 @@ cd NeuroLearn
     ```
 - Install all required packages with:
 ```bash
-pip install -r dependencies.txt
+pip install -r requirements.txt
 ```
 - **Set environment variables**:
 Create a `.env` file in the project root with:
