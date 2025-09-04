@@ -8,11 +8,12 @@ import openai
 from openai import OpenAI
 from test_brain import build_brain_figure
 
-# Gets figure and descriptions from test_brain.py
+# gets figure and descriptions from test_brain.py
 fig, description_dict = build_brain_figure()
 
-region_data_json = json.dumps(description_dict) # Converts the dictionary to JSON string
+region_data_json = json.dumps(description_dict) # converts the dictionary to JSON string
 
+# system prompt that defines NeuroLearn's role, scope, and rules for answering questions
 base_system_prompt = """\
 You are NeuroLearn, an interactive assistant that helps users learn about the human brain using a 3D model.
 
@@ -29,6 +30,7 @@ When relevant, you can supplement the JSON content with your own accurate neuros
 Here is the JSON of all brain regions:
 """
 
+# region colors for labels/UI (darker shade of yellow for better visibility)
 region_color_dict = {
     "Frontal Lobe": "red",
     "Parietal Lobe": "#ebc310",
@@ -43,7 +45,9 @@ default_color = "lightgrey"
 
 app = dash.Dash(__name__)
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+server = app.server
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) 
 
 app.layout = html.Div([
 
@@ -65,11 +69,11 @@ app.layout = html.Div([
     ),
 
     html.Link(
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap",
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap", # ensures fonts used below work
         rel="stylesheet"
     ),
 
-    html.Div([
+    html.Div([ 
 
         html.H1("NeuroLearn: Interactive Brain", style={
             'fontFamily': 'Inter, sans-serif',
@@ -95,7 +99,7 @@ app.layout = html.Div([
                 'height': '600px',
                 'backgroundColor': 'rgba(255,255,255,0)'
             },
-            config={
+            config={ # hides the toolbar
                 'displayModeBar': False
             }
         ),
@@ -166,29 +170,26 @@ app.layout = html.Div([
     Output('answer-box', 'children'),
     Input('brain-graph', 'clickData'),
     Input('submit-button', 'n_clicks'),
-    State('user-input-box', 'value'),
+    State('user-input-box', 'value'), # prevents unnecessary calls
 )
-def update_description(clickData, n_clicks, user_question):
-    button_trigger = ctx.triggered_id
+def update_description(clickData, n_clicks, user_question): # actual callback function
+    button_trigger = ctx.triggered_id  # finds which input caused the callback
 
     if button_trigger == 'submit-button' and n_clicks and user_question:
-        system_header = base_system_prompt + "\nHere is the JSON of all regions:\n"
-        final_system_prompt = {
+        system_header = base_system_prompt + "\nHere is the JSON of all regions:\n" # rules to send to model
+        final_system_prompt = { # builds prompt in dict format since that is what OpenAI requires
             "role": "system",
             "content": system_header + region_data_json
         }
 
         
-        messages = [
-        final_system_prompt,
-        {"role": "user", "content": user_question}
-    ]
+        messages = [final_system_prompt, {"role": "user", "content": user_question}] # conversation transcript for how the AI answers questions
         try:
             completion = client.chat.completions.create(
                 model = "gpt-3.5-turbo",
                 messages = messages,
                 max_tokens = 300,
-                temperature = 0.7
+                temperature = 0.7 # controls randomness of AI responses
             )
             answer = completion.choices[0].message.content.strip()
         except Exception as e:
@@ -198,21 +199,18 @@ def update_description(clickData, n_clicks, user_question):
             html.P(f"You asked: {user_question}"),
             html.P(answer)
         ])
-        return dash.no_update, response_to_user
+        return dash.no_update, response_to_user # leaves description-box unchanged and updates answer-box with AI response
+
             
             
 
-    elif button_trigger == 'brain-graph' and clickData and clickData.get('points'):
-        region_name = clickData['points'][0]['hovertext']
-        region_data = description_dict.get(region_name)
+    elif button_trigger == 'brain-graph' and clickData and clickData.get('points'): # run if a brain region was clicked (ensures clickData exists and contains point details)
+        region_name = clickData['points'][0]['hovertext'] # gets the name of the region that was stored in hovertext when the trace was created
+        region_data = description_dict.get(region_name) # look up the clicked region's details in the dictionary using region_name as the key
 
         if isinstance(region_data, dict):
-            formatted_disorders = [
-                html.Li([
-                    html.Strong(f"{item['name']}: "),
-                    item['description']
-                ]) for item in region_data.get("disorders", [])
-            ]
+            formatted_disorders = [html.Li([html.Strong(f"{item['name']}: "), item['description']]) 
+            for item in region_data.get("disorders", [])]
             color = region_color_dict.get(region_name, default_color)
             title_style = {"marginBottom": "10px", "color": color}
 
@@ -222,21 +220,18 @@ def update_description(clickData, n_clicks, user_question):
                 html.P(f"Function: {region_data['function']}"),
                 html.P(f"Location: {region_data['location']}"),
                 html.P(f"Examples: {region_data['examples']}"),
-                html.Div([
-                    html.Span("Disorders:"),
-                    html.Ul(formatted_disorders)
-                ])
-            ])
-            return region_info, dash.no_update
+                html.Div([html.P("Disorders:"), html.Ul(formatted_disorders)])])
+            return region_info, dash.no_update # leaves answer-box untouched and updates description-box with region info
 
-        return region_data or "No description available.", dash.no_update
+        return region_data or "No description available.", dash.no_update 
 
     else:
         return "Click a brain region to learn more.", dash.no_update
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 8050)) 
+    app.run(host="0.0.0.0", port=port, debug=False)
 
 
 
